@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片文字处理器</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2196F3;
+            --danger-color: #f44336;
+            --background-color: #f5f5f5;
+            --card-background: #ffffff;
+            --border-radius: 8px;
+            --shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: var(--background-color);
+            color: #333;
+        }
+
+        .container {
+            max-width: 100%;
+            padding: 20px;
+            margin: 0 auto;
+            max-width: 1200px;
+        }
+
+        .page-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .card {
+            background: var(--card-background);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        .tools {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            background: var(--card-background);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        .template-preview-container {
+            display: flex;
+            margin: 20px 0;
+            gap: 20px;
+            align-items: flex-start;
+            background: var(--card-background);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        .template-preview-img {
+            max-width: 200px;
+            border: 2px solid #eee;
+            border-radius: var(--border-radius);
+            padding: 5px;
+            transition: transform 0.3s ease;
+        }
+
+        .template-preview-img:hover {
+            transform: scale(1.02);
+        }
+
+        .template-info {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .template-info h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        input, button, select {
+            padding: 10px 15px;
+            font-size: 14px;
+            border-radius: var(--border-radius);
+            border: 1px solid #ddd;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+        }
+
+        button {
+            cursor: pointer;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            transition: transform 0.2s ease, background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        #addImage {
+            background-color: var(--secondary-color);
+        }
+
+        #deleteText {
+            background-color: var(--danger-color);
+        }
+
+        .canvas-container {
+            background: var(--card-background);
+            border-radius: var(--border-radius);
+            margin-top: 20px;
+            overflow: hidden;
+            max-width: 100%;
+            box-shadow: var(--shadow);
+            padding: 20px;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+            touch-action: none;
+            border-radius: var(--border-radius);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+                margin-bottom: 15px;
+            }
+
+            .tools {
+                gap: 5px;
+                padding: 10px;
+                flex-direction: column;
+            }
+
+            .tools input[type="text"],
+            .tools input[type="number"],
+            .tools select,
+            .tools button {
+                width: 100%;
+                margin-bottom: 5px;
+                height: 40px;
+                font-size: 16px;
+            }
+
+            .button-group {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 5px;
+                width: 100%;
+            }
+
+            .checkbox-container {
+                width: 100%;
+                text-align: center;
+                padding: 5px 0;
+            }
+
+            .template-preview-container {
+                flex-direction: column;
+                align-items: center;
+                padding: 10px;
+            }
+
+            .template-preview-img {
+                max-width: 100%;
+                margin-bottom: 10px;
+            }
+
+            .template-info {
+                text-align: center;
+                padding: 10px 0;
+                width: 100%;
+            }
+
+            .canvas-container {
+                padding: 10px;
+                margin-top: 10px;
+            }
+
+            .tools label {
+                padding: 10px 0;
+                display: block;
+            }
+
+            .tools input[type="text"],
+            .tools input[type="number"] {
+                margin: 5px 0;
+            }
+        }
+
+        @media (hover: none) {
+            button {
+                -webkit-tap-highlight-color: transparent;
+                touch-action: manipulation;
+            }
+
+            input, select {
+                -webkit-appearance: none;
+                appearance: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="page-title">图片文字编辑器</h1>
+        <div class="template-preview-container">
+            <div class="template-preview-img">
+                <img id="templatePreview" src="./img/preview_CET4_202306.jpg" alt="模板预览">
+            </div>
+            <div class="template-info">
+                <h3>模板样例</h3>
+                <p id="templateDescription">选择模板并按照样例完成</p>
+            </div>
+        </div>
+        <div class="tools">
+            <select id="templateSelect">
+                <option value="./img/CET_result_CET4_202306.jpg" data-preview="./img/preview_CET4_202306.jpg" data-description="2023年6月四级成绩单模板">2023年6月四级</option>
+                <option value="./img/CET_result_CET6_202306.jpg" data-preview="./img/preview_CET6_202306.jpg" data-description="2023年6月六级成绩单模板">2023年12月六级</option>
+                <option value="./img/kuaiji.jpg" data-preview="./img/preview_kuaiji.jpg" data-description="初级会计模板">初级会计模板</option>
+                <option value="./img/Agrade.jpg" data-preview="./img/preview_Agrade.jpg" data-description="A级">A级模板</option>
+                <option value="./img/Bgrade.jpg" data-preview="./img/preview_Bgrade.jpg" data-description="B级">B级模板</option>
+            </select>
+            <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+            <div class="button-group">
+                <button id="addImage" style="background-color: #2196F3;">添加图片</button>
+                <button id="addText">添加文字</button>
+            </div>
+            <input type="text" id="textInput" placeholder="输入要添加的文字">
+            <input type="number" id="fontSize" value="32" min="8" max="72">
+            <div class="checkbox-container">
+                <label><input type="checkbox" id="boldText" checked>加粗</label>
+            </div>
+            <div class="button-group">
+                <button id="deleteText" style="background-color: #f44336;">删除文字</button>
+                <button id="exportImage">导出图片</button>
+            </div>
+        </div>
+        <div class="canvas-container">
+            <canvas id="canvas"></canvas>
+        </div>
+    </div>
+    <script>
+        function updateTemplatePreview(option) {
+            const previewImg = document.getElementById('templatePreview');
+            const description = document.getElementById('templateDescription');
+            previewImg.src = option.dataset.preview;
+            description.textContent = option.dataset.description;
+        }
+
+        document.getElementById('templateSelect').addEventListener('change', function(e) {
+            updateTemplatePreview(e.target.selectedOptions[0]);
+        });
+
+        updateTemplatePreview(document.getElementById('templateSelect').selectedOptions[0]);
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let image = new Image();
+        let texts = [];
+        let isDragging = false;
+        let selectedText = null;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let uploadedImages = [];
+        let selectedImage = null;
+        let isImageDragging = false;
+        let imageStartX = 0;
+        let imageStartY = 0;
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        function createTextConfig() {
+            return {
+                text: '',
+                x: 0.5,
+                y: 0.5,
+                fontSize: 32,
+                color: '#000000',
+                bold: true,
+                opacity: 1,
+                textureOpacity: 0.3
+            };
+        }
+
+        document.getElementById('templateSelect').addEventListener('change', async function(e) {
+            try {
+                console.log('选择模板:', e.target.value);
+                await loadTemplate(e.target.value);
+            } catch (error) {
+                console.error('加载模板失败:', error);
+                alert(`加载模板失败: ${error.message}\n请确保图片文件存在且路径正确`);
+            }
+        });
+
+        document.getElementById('addText').addEventListener('click', function() {
+            const text = document.getElementById('textInput').value;
+            if (!text) {
+                alert('请输入文字');
+                return;
+            }
+            
+            const config = createTextConfig();
+            config.text = text;
+            config.fontSize = parseInt(document.getElementById('fontSize').value);
+            config.bold = document.getElementById('boldText').checked;
+            
+            texts.push(config);
+            redraw();
+        });
+
+        document.getElementById('exportImage').addEventListener('click', async function() {
+            try {
+                await new Promise(resolve => {
+                    redraw(false);
+                    let loadedImages = 0;
+                    const totalImages = uploadedImages.length;
+                    
+                    if (totalImages === 0) {
+                        resolve();
+                        return;
+                    }
+
+                    uploadedImages.forEach(imgConfig => {
+                        const img = new Image();
+                        img.onload = function() {
+                            ctx.drawImage(
+                                img,
+                                imgConfig.x * canvas.width - imgConfig.width/2,
+                                imgConfig.y * canvas.height - imgConfig.height/2,
+                                imgConfig.width,
+                                imgConfig.height
+                            );
+                            loadedImages++;
+                            if (loadedImages === totalImages) {
+                                resolve();
+                            }
+                        };
+                        img.src = imgConfig.src;
+                    });
+                });
+
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                const link = document.createElement('a');
+                link.download = 'processed_image.jpg';
+                link.href = dataUrl;
+                link.click();
+                
+                redraw(true);
+            } catch (error) {
+                console.error('导出图片失败:', error);
+                alert('导出图片失败，请确保使用本地服务器运行');
+            }
+        });
+
+        function createImageConfig(dataUrl, width, height) {
+            return {
+                src: dataUrl,
+                x: 0.5,
+                y: 0.5,
+                width: width,
+                height: height,
+                scale: 1,
+                isResizing: false,
+                aspectRatio: width / height
+            };
+        }
+
+        document.getElementById('addImage').addEventListener('click', function() {
+            document.getElementById('imageUpload').click();
+        });
+
+        document.getElementById('imageUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const maxSize = Math.min(canvas.width, canvas.height) * 0.5;
+                        const scale = Math.min(maxSize / img.width, maxSize / img.height);
+                        
+                        const imageConfig = createImageConfig(
+                            event.target.result,
+                            img.width * scale,
+                            img.height * scale
+                        );
+                        uploadedImages.push(imageConfig);
+                        redraw();
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function drawWatermark(ctx) {
+            ctx.save();
+            ctx.font = '16px Arial';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            const spacing = Math.min(canvas.width, canvas.height) * 0.2;
+            
+            for (let i = 0; i < canvas.width; i += spacing) {
+                for (let j = 0; j < canvas.height; j += spacing) {
+                    ctx.save();
+                    ctx.translate(i, j);
+                    ctx.rotate(-Math.PI / 6);
+                    ctx.fillText('预览水印导出不显示', 0, 0);
+                    ctx.restore();
+                }
+            }
+            ctx.restore();
+        }
+
+        function redraw(showControls = true) {
+            return new Promise(resolve => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(image, 0, 0);
+                
+                let loadedImages = 0;
+                const totalImages = uploadedImages.length;
+                
+                if (totalImages === 0) {
+                    texts.forEach(textConfig => {
+                        addTextWithEffects(textConfig);
+                    });
+                    if (showControls) {
+                        drawWatermark(ctx);
+                    }
+                    resolve();
+                    return;
+                }
+
+                uploadedImages.forEach(imgConfig => {
+                    const img = new Image();
+                    img.onload = function() {
+                        ctx.drawImage(
+                            img,
+                            imgConfig.x * canvas.width - imgConfig.width/2,
+                            imgConfig.y * canvas.height - imgConfig.height/2,
+                            imgConfig.width,
+                            imgConfig.height
+                        );
+                        
+                        if (showControls) {
+                            const x = imgConfig.x * canvas.width + imgConfig.width/2;
+                            const y = imgConfig.y * canvas.height + imgConfig.height/2;
+                            ctx.fillStyle = '#ffffff';
+                            ctx.strokeStyle = '#000000';
+                            ctx.lineWidth = 2;
+                            ctx.beginPath();
+                            ctx.arc(x, y, 8, 0, Math.PI * 2);
+                            ctx.fill();
+                            ctx.stroke();
+                        }
+
+                        loadedImages++;
+                        if (loadedImages === totalImages) {
+                            texts.forEach(textConfig => {
+                                addTextWithEffects(textConfig);
+                            });
+                            if (showControls) {
+                                drawWatermark(ctx);
+                            }
+                            resolve();
+                        }
+                    };
+                    img.src = imgConfig.src;
+                });
+            });
+        }
+
+        function addTextWithEffects(textConfig) {
+            const x = textConfig.x * canvas.width;
+            const y = textConfig.y * canvas.height;
+            
+            const fontWeight = textConfig.bold ? 'bold' : '';
+            ctx.font = `${fontWeight} ${textConfig.fontSize}px FangSong, 仿宋, FangSong_GB2312, STFangSong, serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            ctx.fillStyle = textConfig.color;
+            ctx.globalAlpha = textConfig.opacity;
+            ctx.fillText(textConfig.text, x, y);
+            ctx.fillText(textConfig.text, x, y);
+            
+            applyTexture(x, y, textConfig);
+            applyNoise(x, y, textConfig);
+            
+            ctx.globalAlpha = 1;
+        }
+
+        function applyTexture(x, y, textConfig) {
+            ctx.save();
+            const metrics = ctx.measureText(textConfig.text);
+            const height = textConfig.fontSize;
+            
+            const textureCanvas = document.createElement('canvas');
+            const textureCtx = textureCanvas.getContext('2d');
+            textureCanvas.width = metrics.width;
+            textureCanvas.height = height;
+            
+            textureCtx.fillStyle = '#000000';
+            for (let i = 0; i < metrics.width * height * 0.1; i++) {
+                const tx = Math.random() * metrics.width;
+                const ty = Math.random() * height;
+                textureCtx.globalAlpha = Math.random() * 0.1;
+                textureCtx.fillRect(tx, ty, 1, 1);
+            }
+            
+            ctx.globalCompositeOperation = 'source-atop';
+            ctx.globalAlpha = textConfig.textureOpacity;
+            ctx.drawImage(textureCanvas, 
+                x - metrics.width/2,
+                y - height/2,
+                metrics.width,
+                height
+            );
+            ctx.restore();
+        }
+
+        function applyNoise(x, y, textConfig) {
+            ctx.save();
+            const metrics = ctx.measureText(textConfig.text);
+            const height = textConfig.fontSize;
+            
+            const noiseCanvas = document.createElement('canvas');
+            const noiseCtx = noiseCanvas.getContext('2d');
+            noiseCanvas.width = metrics.width;
+            noiseCanvas.height = height;
+            
+            const noiseData = noiseCtx.createImageData(metrics.width, height);
+            for (let i = 0; i < noiseData.data.length; i += 4) {
+                const value = Math.random() * 255;
+                noiseData.data[i] = value;
+                noiseData.data[i + 1] = value;
+                noiseData.data[i + 2] = value;
+                noiseData.data[i + 3] = Math.random() * 30;
+            }
+            noiseCtx.putImageData(noiseData, 0, 0);
+            
+            ctx.globalCompositeOperation = 'overlay';
+            ctx.globalAlpha = 0.1;
+            ctx.drawImage(noiseCanvas,
+                x - metrics.width/2,
+                y - height/2,
+                metrics.width,
+                height
+            );
+            ctx.restore();
+        }
+
+        function checkResizeHandle(x, y, imgConfig) {
+            const handleX = imgConfig.x * canvas.width + imgConfig.width/2;
+            const handleY = imgConfig.y * canvas.height + imgConfig.height/2;
+            const handleRadius = 12;
+            
+            return Math.sqrt(Math.pow(x - handleX, 2) + Math.pow(y - handleY, 2)) <= handleRadius;
+        }
+
+        canvas.addEventListener('mousedown', function(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+            
+            for (let i = uploadedImages.length - 1; i >= 0; i--) {
+                const imgConfig = uploadedImages[i];
+                if (checkResizeHandle(x, y, imgConfig)) {
+                    imgConfig.isResizing = true;
+                    selectedImage = imgConfig;
+                    return;
+                }
+                
+                const imgX = imgConfig.x * canvas.width;
+                const imgY = imgConfig.y * canvas.height;
+                
+                if (x >= imgX - imgConfig.width/2 && 
+                    x <= imgX + imgConfig.width/2 && 
+                    y >= imgY - imgConfig.height/2 && 
+                    y <= imgY + imgConfig.height/2) {
+                    isImageDragging = true;
+                    selectedImage = imgConfig;
+                    imageStartX = x - imgX;
+                    imageStartY = y - imgY;
+                    return;
+                }
+            }
+
+            for (let i = texts.length - 1; i >= 0; i--) {
+                const textConfig = texts[i];
+                const textX = textConfig.x * canvas.width;
+                const textY = textConfig.y * canvas.height;
+                
+                ctx.font = `${textConfig.bold ? 'bold' : ''} ${textConfig.fontSize}px FangSong`;
+                const metrics = ctx.measureText(textConfig.text);
+                const textWidth = metrics.width;
+                const textHeight = textConfig.fontSize;
+                
+                if (x >= textX - textWidth/2 && 
+                    x <= textX + textWidth/2 && 
+                    y >= textY - textHeight/2 && 
+                    y <= textY + textHeight/2) {
+                    isDragging = true;
+                    selectedText = textConfig;
+                    dragStartX = x - textX;
+                    dragStartY = y - textY;
+                    break;
+                }
+            }
+        });
+
+        canvas.addEventListener('mousemove', function(e) {
+            if (selectedImage && selectedImage.isResizing) {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const x = (e.clientX - rect.left) * scaleX;
+                const y = (e.clientY - rect.top) * scaleY;
+                
+                const centerX = selectedImage.x * canvas.width;
+                const centerY = selectedImage.y * canvas.height;
+                const newWidth = Math.abs((x - centerX) * 2);
+                const newHeight = newWidth / selectedImage.aspectRatio;
+                
+                if (newWidth >= 20 && newHeight >= 20) {
+                    selectedImage.width = newWidth;
+                    selectedImage.height = newHeight;
+                }
+                
+                redraw();
+                return;
+            }
+
+            if (isImageDragging && selectedImage) {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const x = (e.clientX - rect.left) * scaleX;
+                const y = (e.clientY - rect.top) * scaleY;
+                
+                selectedImage.x = (x - imageStartX) / canvas.width;
+                selectedImage.y = (y - imageStartY) / canvas.height;
+                
+                selectedImage.x = Math.max(0, Math.min(1, selectedImage.x));
+                selectedImage.y = Math.max(0, Math.min(1, selectedImage.y));
+                
+                redraw();
+                return;
+            }
+
+            if (!isDragging || !selectedText) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+            
+            selectedText.x = (x - dragStartX) / canvas.width;
+            selectedText.y = (y - dragStartY) / canvas.height;
+            
+            selectedText.x = Math.max(0, Math.min(1, selectedText.x));
+            selectedText.y = Math.max(0, Math.min(1, selectedText.y));
+            
+            redraw();
+        });
+
+        canvas.addEventListener('mouseup', function() {
+            if (selectedImage) {
+                selectedImage.isResizing = false;
+            }
+            isDragging = false;
+            selectedText = null;
+            isImageDragging = false;
+            selectedImage = null;
+        });
+
+        canvas.addEventListener('mouseleave', function() {
+            isDragging = false;
+            selectedText = null;
+            isImageDragging = false;
+            selectedImage = null;
+        });
+
+        canvas.addEventListener('mousemove', function(e) {
+            if (isDragging) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+            
+            let isOverText = false;
+            
+            for (const textConfig of texts) {
+                const textX = textConfig.x * canvas.width;
+                const textY = textConfig.y * canvas.height;
+                
+                ctx.font = `${textConfig.bold ? 'bold' : ''} ${textConfig.fontSize}px FangSong`;
+                const metrics = ctx.measureText(textConfig.text);
+                const textWidth = metrics.width;
+                const textHeight = textConfig.fontSize;
+                
+                if (x >= textX - textWidth/2 && 
+                    x <= textX + textWidth/2 && 
+                    y >= textY - textHeight/2 && 
+                    y <= textY + textHeight/2) {
+                    isOverText = true;
+                    break;
+                }
+            }
+            
+            canvas.style.cursor = isOverText ? 'move' : 'default';
+        });
+
+        function deleteText() {
+            if (selectedText) {
+                texts = texts.filter(t => t !== selectedText);
+                selectedText = null;
+                redraw();
+            }
+        }
+
+        document.getElementById('deleteText').addEventListener('click', deleteText);
+
+        canvas.addEventListener('dblclick', function(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+            
+            for (let i = uploadedImages.length - 1; i >= 0; i--) {
+                const imgConfig = uploadedImages[i];
+                const imgX = imgConfig.x * canvas.width;
+                const imgY = imgConfig.y * canvas.height;
+                
+                if (x >= imgX - imgConfig.width/2 && 
+                    x <= imgX + imgConfig.width/2 && 
+                    y >= imgY - imgConfig.height/2 && 
+                    y <= imgY + imgConfig.height/2) {
+                    uploadedImages.splice(i, 1);
+                    redraw();
+                    return;
+                }
+            }
+
+            if (texts.length > 0) {
+                for (let i = texts.length - 1; i >= 0; i--) {
+                    const textConfig = texts[i];
+                    const textX = textConfig.x * canvas.width;
+                    const textY = textConfig.y * canvas.height;
+                    
+                    ctx.font = `${textConfig.bold ? 'bold' : ''} ${textConfig.fontSize}px FangSong`;
+                    const metrics = ctx.measureText(textConfig.text);
+                    const textWidth = metrics.width;
+                    const textHeight = textConfig.fontSize;
+                    
+                    if (x >= textX - textWidth/2 && 
+                        x <= textX + textWidth/2 && 
+                        y >= textY - textHeight/2 && 
+                        y <= textY + textHeight/2) {
+                        texts.splice(i, 1);
+                        redraw();
+                        break;
+                    }
+                }
+            }
+        });
+
+        function loadTemplate(templatePath) {
+            return new Promise((resolve, reject) => {
+                image = new Image();
+                image.crossOrigin = 'anonymous';
+                image.onload = function() {
+                    canvas.width = image.width;
+                    canvas.height = image.height;
+                    redraw();
+                    resolve();
+                };
+                image.onerror = function(error) {
+                    console.error('图片加载失败:', templatePath, error);
+                    reject(new Error(`无法加载图片: ${templatePath}`));
+                };
+                image.src = templatePath;
+                console.log('尝试加载图片:', templatePath);
+            });
+        }
+
+        loadTemplate(document.getElementById('templateSelect').value).catch(error => {
+            console.error('初始加载模板失败:', error);
+            alert('加载模板失败');
+        });
+
+        function getTouchPos(canvas, touch) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            return {
+                x: (touch.clientX - rect.left) * scaleX,
+                y: (touch.clientY - rect.top) * scaleY
+            };
+        }
+
+        canvas.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const pos = getTouchPos(canvas, touch);
+            
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+            
+            touchStartX = pos.x;
+            touchStartY = pos.y;
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            
+            const mouseEvent = new MouseEvent('mouseup');
+            canvas.dispatchEvent(mouseEvent);
+        }, { passive: false });
+
+        let lastTap = 0;
+        canvas.addEventListener('touchend', function(e) {
+            const now = new Date().getTime();
+            const timeDiff = now - lastTap;
+            
+            if (timeDiff < 300 && timeDiff > 0) {
+                const touch = e.changedTouches[0];
+                const mouseEvent = new MouseEvent('dblclick', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvent);
+            }
+            
+            lastTap = now;
+        });
+
+        function preventZoom(e) {
+            e.preventDefault();
+            document.body.style.touchAction = 'none';
+        }
+
+        document.addEventListener('touchmove', preventZoom, { passive: false });
+        document.addEventListener('touchend', function() {
+            document.body.style.touchAction = 'auto';
+        });
+    </script>
+</body>
+</html>
